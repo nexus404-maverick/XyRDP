@@ -1,54 +1,131 @@
-# RdpFree
+# XyRDP-VN — RDP Miễn Phí qua Trình Duyệt (không cần Tailscale)
 
-Dashboard: **https://rdpfree.projectkal.my.id** · Credit: **KallAncrit**
+**Xem màn hình Windows bằng trình duyệt** · Không cần cài app RDP · Không dùng Tailscale
 
-Windows RDP melalui **Tailscale privat**, dengan dashboard Next.js/Cloudflare dan integrasi API native XyDesk Remote. Tidak ada Pinggy, bore, ngrok, Serveo, localhost.run, Funnel, atau relay publik pada workflow aktif.
+Dashboard / hướng dẫn: xem file này.  
+Tín dụng gốc: KallAncrit (RdpFree) · Bản Việt hóa & viết lại: XyRDP-VN
 
-## Mulai
+---
 
-1. Login identitas GitHub di `/login` (scope `read:user`). Login tidak memberikan akses repository.
-2. Pasang GitHub App secara terpisah di `/dashboard/connection`, pilih repository yang diizinkan. Owner layanan harus mendaftarkan App dahulu di halaman admin tersembunyi `/admin/github-app`.
-3. Buat repository dari template dengan nama pilihanmu. Token operasi biasa hanya mendapat Contents/Metadata read, Actions/Secrets write. Manifest baru juga meminta Administration write untuk fitur hapus repo setelah konfirmasi pemilik; token hak hapus dibuat terpisah. App tetap tidak dapat menulis atau membersihkan folder source. Template manual tetap menyalin folder web.
-4. Isi `RDP_PASSWORD` dan `TAILSCALE_AUTH_KEY` lewat Setup. Hubungkan HP ke tailnet yang sama. Jangan membagikan auth key atau password.
-5. Atur sesi di Settings, jalankan dari Home. Password tidak dicetak, di-Base64, atau dijadikan artefak workflow. Reveal/copy tetap melalui vault dashboard yang terautentikasi.
+## Điểm khác so với bản gốc
 
-`xyadmin` adalah username default; `runneradmin` hanya bila dipilih eksplisit. Workflow mengubah kebijakan Windows termasuk UAC dan akun administrator. Gunakan mesin khusus/disposable, **bukan komputer kerja utama**. Durasi job maksimal 360 menit termasuk setup; waktu persiapan mengurangi sisa sesi. Sesi GitHub-hosted bukan layanan PC gaming dan tidak ada jaminan bebas suspend.
+| Bản gốc (RdpFree) | Bản này (XyRDP-VN) |
+|---|---|
+| Tailscale (mạng riêng) | **FRP công khai** (IP + port mở ra ngoài) |
+| Client RDP (mstsc / XyDesk) | **noVNC** — mở bằng Chrome/Firefox/Safari |
+| Giao diện tiếng Indonesia | **Tiếng Việt 100%** |
+| Chỉ cổng 3389 | Cổng VNC 5900 + noVNC web 6080 (qua FRP) |
 
-## Games dan media
+Bạn chỉ cần mở link dạng `http://xxxx.proxy.rlwy.net:xxxxx` trên trình duyệt là xem và điều khiển được màn hình Windows.
 
-Halaman `/dashboard/games` menyimpan pilihan persiapan SA-MP, Roblox, Minecraft Java dan Bedrock serta menampilkan status Windows pada sesi aktif. Pengaturan berlaku pada run berikutnya. Start/stop yang tersedia saat ini adalah **sesi workflow**, bukan proses game di desktop. Login, pemasangan interaktif, launch, dan stop game dilakukan lewat XyDesk. **Kontrol proses game langsung dari dashboard belum tersedia.**
+---
 
-Persiapan game hanya berjalan pada runner Windows self-hosted khusus milikmu, berlabel `self-hosted`, `Windows`, `X64`, `rdpfree`. Jangan izinkan workflow/PR dari pihak tidak tepercaya memakai runner ini. Finalize memutus Tailscale, tetapi tidak menghapus akun, aplikasi, atau perubahan sistem pada mesin self-hosted; reset image setelah pemakaian.
+## Kiến trúc
 
-- **SA-MP**: membutuhkan GTA SA milikmu. Installer/dependensi atau keberadaan EXE bukan bukti berhasil masuk server.
-- **Roblox**: installer resmi dengan signature diverifikasi. VM dapat ditolak Roblox. Tidak ada spoofing BIOS, penghapusan driver VM, atau bypass anti-cheat.
-- **Minecraft Java**: launcher resmi, akun berlisensi dan dukungan OpenGL/GPU tetap diperlukan.
-- **Minecraft Bedrock**: Windows desktop dengan Store/Xbox. Windows Server tidak didukung oleh setup ini. Instalasi dan login Store tetap interaktif.
-- **Wallpaper**: wallpaper anime XyVerse asli dari assets/wallpaper.jpg diterapkan pada profil pengguna saat logon, bukan hanya HKCU milik runner. Wallpaper otomatis aktif tanpa pilihan ya/tidak atau URL pengganti. Klien juga harus mengaktifkan desktop wallpaper.
-- **Mikrofon**: host mengizinkan kanal audio capture RDP; XyDesk harus mengaktifkan input dan meminta izin Android. Uji Windows Settings > Sound > Input. Perangkat bernama “Remote Audio” pada **Input** adalah recording, berbeda dari output speaker.
+```
+Điện thoại / Máy tính
+        │  (trình duyệt)
+        ▼
+  http://PUBLIC_HOST:PUBLIC_PORT   ←  FRP TCP Proxy (Railway / VPS)
+        │
+        ▼
+  frps (server FRP bạn tự deploy)
+        │
+        ▼
+  frpc (chạy trong GitHub Actions runner)
+        │
+        ▼
+  noVNC (port 6080)  ←→  TightVNC Server (port 5900)
+        │
+        ▼
+  Desktop Windows của runner
+```
 
-Status `installer_ready`, `installed_unverified`, `store_required`, `unsupported_environment`, dan `requires_self_hosted` bukan klaim berhasil bermain. Wallpaper/mikrofon dan game belum lulus pengujian Windows + perangkat Android end-to-end.
+- **Không cần Tailscale**, không cần VPN.
+- Runner GitHub không có IP public → dùng FRP để “đẩy” cổng ra ngoài.
+- noVNC = VNC qua WebSocket, chạy hoàn toàn trên trình duyệt.
 
-## Update repository lama
+---
 
-Workflow baru bertanda `# rdpfree-workflow-schema: 3`. Dashboard menolak dispatch ke workflow lama agar parameter game/media baru tidak salah dikirim. Sinkronkan `.github/workflows/rdp-6h.yml`, seluruh `scripts/`, dan `assets/` dari repository ini. GitHub App tidak punya izin menulis source, jadi pembaruan dilakukan pemilik repository. Pengaturan tersimpan `tunnel`/`semua` dimigrasikan ke Tailscale; SA-MP default lama dinonaktifkan sampai pemilik memilih mesin khusus secara eksplisit.
+## Chuẩn bị (chỉ làm 1 lần)
 
-## Source dan akses
+### 1. Deploy server FRP trên Railway (hoặc VPS bất kỳ)
 
-- `.github/workflows/rdp-6h.yml`: Windows session + persiapan host.
-- `scripts/`: skrip Windows; `assets/`: wallpaper dan konfigurasi.
-- `web-next/`: dashboard Next.js/OpenNext/Cloudflare aktif. Folder `web/`, `deploy/`, dan dokumentasi lama adalah arsip implementasi terdahulu, bukan konfigurasi akses saat ini.
-- Admin tetap tersembunyi, login email/password + Turnstile; tidak dipindah ke GitHub login.
-- Native API: lihat `web-next/docs/XYDESK-API.md`. Token terikat repository dan dapat dicabut. Token OAuth native lama perlu dibuat ulang setelah pemisahan App.
-- Login terpisah tidak mencegah suspend. Untuk akun tester yang ditangguhkan, review hanya melalui GitHub Support; penyebab tidak dapat disimpulkan dari 404 atau pola login saja.
+1. Tạo project Railway → Deploy from GitHub → chọn repo này → **Root Directory = `railway-frp`**.
+2. Thêm biến môi trường: `FRP_TOKEN` = một chuỗi mật khẩu dài ngẫu nhiên (ví dụ `XyRDP-vn-2026-secret-xyz`).
+3. Networking → **TCP Proxy**:
+   - Port nội bộ **7000** → ghi lại endpoint (vd: `roundhouse.proxy.rlwy.net:12345`) → đây là **máy chủ điều khiển FRP**.
+   - Port nội bộ **13389** → ghi lại endpoint (vd: `roundhouse.proxy.rlwy.net:23456`) → đây là **cổng public cho noVNC**.
+4. Trong repo GitHub → Settings → Secrets and variables → Actions:
+   - Secret `FRP_TOKEN` = giá trị `FRP_TOKEN` ở trên.
+   - Secret `RDP_PASSWORD` = mật khẩu đăng nhập desktop (tối thiểu 8 ký tự).
+   - Variable `FRP_SERVER` = endpoint điều khiển (host:port, ví dụ `roundhouse.proxy.rlwy.net:12345`).
+   - Variable `FRP_REMOTE_PORT` = `13389` (hoặc để trống, mặc định 13389).
 
-## Validasi
+> Nếu dùng VPS riêng: cài `frps`, mở port 7000 + 13389, điền `FRP_SERVER` = `IP_VPS:7000`.
 
-Lint, TypeScript, build OpenNext, unit tests dan browser mobile smoke tersedia/diuji. Skrip PowerShell diparse dengan PowerShell 7; parser bukan pengujian instalasi Windows. Tes UI game memakai mock API tanpa menyalakan runner atau game. Instalasi App nyata memerlukan persetujuan owner. Jangan menganggap hasil-hasil ini sebagai sertifikasi kompatibilitas game atau audio end-to-end.
+### 2. Fork / tạo repo từ template
 
+Tạo repository từ template này, bật GitHub Actions.
 
-## Panduan repo dan hapus lewat dashboard
+---
 
-Alur: buat repo dari template dahulu → konfirmasi “Repo saya sudah dibuat” → izinkan akses repository melalui GitHub App (Only select repositories) → pilih repo → isi secrets → mulai sesi. Install App berarti otorisasi, bukan membuat repo atau mengunduh aplikasi HP.
+## Chạy phiên làm việc
 
-Hapus repo tersedia di `/dashboard/connection`, khusus login GitHub pemilik repo pribadi. Ketik nama lengkap `owner/repo` dan setujui dampak penghapusan; workflow aktif/antre harus berhenti. Repo sumber layanan dilindungi dan token XyDesk tidak dapat menghapus. App yang sudah terdaftar perlu Administration: Read and write dan persetujuan pembaruan dari pemilik instalasi. Izin Administration lebih luas daripada delete-only; GitHub tidak menyediakan scope hapus khusus untuk installation token. Token biasa tetap tanpa Administration. Pengujian destructive menggunakan mock, bukan menghapus repo pengguna.
+1. Vào tab **Actions** → chọn workflow **XyRDP-VN — Màn hình 6 giờ**.
+2. **Run workflow** → điền:
+   - `thoi_gian_phut`: 10–360 (mặc định 360).
+   - `ten_may`: tiền tố hostname (mặc định `xyrdp`).
+   - `ten_nguoi_dung`: tài khoản Windows (mặc định `xyadmin`).
+3. Đợi khoảng 3–8 phút (cài VNC + noVNC + FRP).
+4. Xem log bước **Công bố địa chỉ truy cập** hoặc file artifact `trang-thai` → sẽ có dòng:
+
+   ```
+   Địa chỉ xem màn hình: http://roundhouse.proxy.rlwy.net:23456
+   Mật khẩu VNC: (cùng RDP_PASSWORD)
+   ```
+
+5. Mở link trên trình duyệt → nhập mật khẩu VNC → dùng được ngay.
+
+---
+
+## Bảo mật
+
+- `FRP_TOKEN` và `RDP_PASSWORD` **không** được in ra log công khai.
+- FRP chỉ cho phép remote port cố định (13389).
+- Nên đổi `FRP_TOKEN` định kỳ.
+- Runner GitHub là máy dùng một lần, hết giờ tự hủy.
+- **Không** dùng máy làm việc chính để chạy workflow này.
+
+---
+
+## Cấu trúc thư mục
+
+```
+.github/workflows/xyrdp-vn.yml   ← Workflow chính
+scripts/
+  lib-chung.ps1                  ← Hàm dùng chung
+  cai-rdp-co-ban.ps1             ← Tạo user, bật desktop
+  cai-vnc-novnc.ps1              ← Cài TightVNC + noVNC
+  cai-frp.ps1                    ← Kết nối FRP public
+  giu-phien.ps1                  ← Keepalive
+  ket-thuc.ps1                   ← Dọn dẹp
+  cong-bo-trang-thai.ps1         ← Xuất địa chỉ truy cập
+railway-frp/                     ← Server FRP deploy lên Railway/VPS
+README.md                        ← File này (tiếng Việt)
+```
+
+---
+
+## Giới hạn
+
+- Thời gian tối đa mỗi job GitHub-hosted: **360 phút** (6 giờ).
+- Đây không phải máy chơi game chuyên dụng; có thể bị suspend.
+- noVNC phù hợp làm việc văn phòng, duyệt web, code nhẹ. Game nặng nên cân nhắc client VNC native hoặc giữ RDP qua FRP (có thể bật lại sau).
+
+---
+
+## Giấy phép & ghi công
+
+Dựa trên RdpFree / XyRDP của KallAncrit.  
+Bản này được viết lại hoàn toàn: bỏ Tailscale, chuyển sang noVNC + FRP, Việt hóa 100%.

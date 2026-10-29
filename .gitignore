@@ -1,7 +1,8 @@
-# kredensial lokal — JANGAN PERNAH di-commit ke repo publik
-web/config.json
-*.env
-out/
+# Tạm
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
 node_modules/
-.vercel/
-deploy/vercel/.vercel/
+.next/
+out/

@@ -2,7 +2,7 @@ bindPort = 7000
 auth.method = "token"
 auth.token = "__FRP_TOKEN__"
 
-# Hanya port ini yang boleh diminta frpc (port RDP publik internal).
+# Chỉ cho phép frpc yêu cầu cổng này (cổng noVNC public nội bộ).
 allowPorts = [
   { single = 13389 }
 ]

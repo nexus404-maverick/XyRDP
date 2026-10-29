@@ -1,0 +1,102 @@
+# XyRDP-VN — Xem màn hình Windows qua trình duyệt (noVNC + FRP)
+# Không dùng Tailscale. Không cần app RDP.
+name: XyRDP-VN — Màn hình 6 giờ
+
+on:
+  workflow_dispatch:
+    inputs:
+      thoi_gian_phut:
+        description: 'Thời gian phiên (phút, 10–360)'
+        required: false
+        default: '360'
+        type: string
+      ten_may:
+        description: 'Tiền tố tên máy (hostname)'
+        required: false
+        default: 'xyrdp'
+        type: string
+      ten_nguoi_dung:
+        description: 'Tên tài khoản Windows (3–20 ký tự)'
+        required: false
+        default: 'xyadmin'
+        type: string
+      don_dep_o_cung:
+        description: 'Dọn toolcache để có thêm dung lượng'
+        required: false
+        default: 'co'
+        type: choice
+        options:
+          - co
+          - khong
+      giao_dien_win10:
+        description: 'Áp dụng giao diện kiểu Windows 10'
+        required: false
+        default: 'co'
+        type: choice
+        options:
+          - co
+          - khong
+
+env:
+  THOI_GIAN: ${{ inputs.thoi_gian_phut || '360' }}
+  TEN_MAY: ${{ inputs.ten_may || 'xyrdp' }}
+  TEN_NGUOI_DUNG: ${{ inputs.ten_nguoi_dung || 'xyadmin' }}
+  RDP_PASSWORD: ${{ secrets.RDP_PASSWORD }}
+  FRP_TOKEN: ${{ secrets.FRP_TOKEN }}
+  FRP_SERVER: ${{ vars.FRP_SERVER }}
+  FRP_REMOTE_PORT: ${{ vars.FRP_REMOTE_PORT || '13389' }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  man-hinh:
+    name: Phiên Windows + noVNC
+    runs-on: windows-2022
+    timeout-minutes: 360
+
+    steps:
+      - name: Lấy mã nguồn
+        uses: actions/checkout@v4
+
+      - name: Cài đặt cơ bản (tạo user + bật desktop)
+        shell: pwsh
+        run: ./scripts/cai-rdp-co-ban.ps1
+
+      - name: Dọn dung lượng ổ cứng
+        if: ${{ (inputs.don_dep_o_cung || 'co') == 'co' }}
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          # Dọn nhẹ toolcache để tránh hết đĩa
+          $paths = @(
+            "$env:AGENT_TOOLSDIRECTORY",
+            "C:\hostedtoolcache",
+            "$env:TEMP\*"
+          )
+          foreach ($p in $paths) {
+            if (Test-Path $p) {
+              try { Remove-Item $p -Recurse -Force -ErrorAction SilentlyContinue } catch {}
+            }
+          }
+          Write-Host "Đã dọn dung lượng tạm."
+
+      - name: Cài TightVNC + noVNC (xem màn hình bằng trình duyệt)
+        shell: pwsh
+        run: ./scripts/cai-vnc-novnc.ps1
+
+      - name: Kết nối FRP (mở IP công khai + port)
+        shell: pwsh
+        run: ./scripts/cai-frp.ps1
+
+      - name: Công bố địa chỉ truy cập
+        shell: pwsh
+        run: ./scripts/cong-bo-trang-thai.ps1
+
+      - name: Giữ phiên sống (keepalive)
+        shell: pwsh
+        run: ./scripts/giu-phien.ps1
+
+      - name: Kết thúc phiên
+        if: ${{ always() }}
+        shell: pwsh
+        continue-on-error: true
+        run: ./scripts/ket-thuc.ps1
