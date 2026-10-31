@@ -1,38 +1,63 @@
-# XyRDP-VN — Windows RDP qua hypertunnel
+# RdpFree
 
-Workflow tạo phiên Windows tạm trên GitHub Actions và công bố cổng TCP để kết nối bằng ứng dụng Remote Desktop.
+Dashboard: **https://rdpfree.projectkal.my.id** · Credit: **KallAncrit**
 
-> **Cảnh báo bảo mật:** hypertunnel dùng relay TCP công khai. Endpoint không phải lớp xác thực bổ sung; ai biết endpoint có thể thử kết nối tới RDP. Dùng mật khẩu mạnh, không chia sẻ endpoint, và chỉ chạy trong môi trường/tài khoản mà bạn được phép quản trị. Hypertunnel là dự án cũ; relay công cộng mặc định có thể ngừng hoạt động hoặc không ổn định.
+Windows RDP melalui **Sunshine + Moonlight privat**, dengan dashboard Next.js/Cloudflare dan integrasi API native XyDesk Remote. Tidak ada Pinggy, bore, ngrok, Serveo, localhost.run, Funnel, atau relay publik pada workflow aktif.
 
-## Cấu hình bắt buộc
+## Mulai
 
-Trong repository GitHub, mở **Settings → Secrets and variables → Actions → New repository secret** và tạo:
+1. Login identitas GitHub di `/login` (scope `read:user`). Login tidak memberikan akses repository.
+2. Pasang GitHub App secara terpisah di `/dashboard/connection`, pilih repository yang diizinkan. Owner layanan harus mendaftarkan App dahulu di halaman admin tersembunyi `/admin/github-app`.
+3. Buat repository dari template dengan nama pilihanmu. Token operasi biasa hanya mendapat Contents/Metadata read, Actions/Secrets write. Manifest baru juga meminta Administration write untuk fitur hapus repo setelah konfirmasi pemilik; token hak hapus dibuat terpisah. App tetap tidak dapat menulis atau membersihkan folder source. Template manual tetap menyalin folder web.
+4. Isi `RDP_PASSWORD` dan `(tidak perlu auth key)` lewat Setup. Hubungkan HP ke tailnet yang sama. Jangan membagikan auth key atau password.
+5. Atur sesi di Settings, jalankan dari Home. Password tidak dicetak, di-Base64, atau dijadikan artefak workflow. Reveal/copy tetap melalui vault dashboard yang terautentikasi.
 
-- `RDP_PASSWORD`: mật khẩu Windows dài, mạnh (ít nhất 16 ký tự, có chữ hoa/thường, số và ký tự đặc biệt). Không đặt mật khẩu trực tiếp trong YAML.
+`xyadmin` adalah username default; `runneradmin` hanya bila dipilih eksplisit. Workflow mengubah kebijakan Windows termasuk UAC dan akun administrator. Gunakan mesin khusus/disposable, **bukan komputer kerja utama**. Durasi job maksimal 360 menit termasuk setup; waktu persiapan mengurangi sisa sesi. Sesi GitHub-hosted bukan layanan PC gaming dan tidak ada jaminan bebas suspend.
 
-Không cần `FRP_TOKEN`, `FRP_SERVER` hay `FRP_REMOTE_PORT` cho workflow này.
+## Games dan media
 
-## Chạy workflow
+Halaman `/dashboard/games` menyimpan pilihan persiapan SA-MP, Roblox, Minecraft Java dan Bedrock serta menampilkan status Windows pada sesi aktif. Pengaturan berlaku pada run berikutnya. Start/stop yang tersedia saat ini adalah **sesi workflow**, bukan proses game di desktop. Login, pemasangan interaktif, launch, dan stop game dilakukan lewat XyDesk. **Kontrol proses game langsung dari dashboard belum tersedia.**
 
-1. Vào **Actions → XyRDP-VN — RDP 6 giờ**.
-2. Nhấn **Run workflow**.
-3. Chọn thời gian 10–360 phút và tên tài khoản (mặc định `xyadmin`).
-4. Đợi bước **Khởi chạy hypertunnel** báo endpoint dạng `hypertunnel.ga:19432`.
-5. Trên Windows mở `mstsc`; nhập `hypertunnel.ga:19432` vào ô Computer. Trên điện thoại, dùng ứng dụng Remote Desktop hỗ trợ địa chỉ `host:port`.
-6. Đăng nhập bằng username đã chọn và giá trị của secret `RDP_PASSWORD`.
-7. Nếu cần xem lại thông tin, tải artifact `xyrdp-connection-details` trong run tương ứng.
+Persiapan game hanya berjalan pada runner Windows self-hosted khusus milikmu, berlabel `self-hosted`, `Windows`, `X64`, `rdpfree`. Jangan izinkan workflow/PR dari pihak tidak tepercaya memakai runner ini. Finalize memutus Sunshine + Moonlight, tetapi tidak menghapus akun, aplikasi, atau perubahan sistem pada mesin self-hosted; reset image setelah pemakaian.
 
-## Những điểm cần biết
+- **SA-MP**: membutuhkan GTA SA milikmu. Installer/dependensi atau keberadaan EXE bukan bukti berhasil masuk server.
+- **Roblox**: installer resmi dengan signature diverifikasi. VM dapat ditolak Roblox. Tidak ada spoofing BIOS, penghapusan driver VM, atau bypass anti-cheat.
+- **Minecraft Java**: launcher resmi, akun berlisensi dan dukungan OpenGL/GPU tetap diperlukan.
+- **Minecraft Bedrock**: Windows desktop dengan Store/Xbox. Windows Server tidak didukung oleh setup ini. Instalasi dan login Store tetap interaktif.
+- **Wallpaper**: wallpaper anime XyVerse asli dari assets/wallpaper.jpg diterapkan pada profil pengguna saat logon, bukan hanya HKCU milik runner. Wallpaper otomatis aktif tanpa pilihan ya/tidak atau URL pengganti. Klien juga harus mengaktifkan desktop wallpaper.
+- **Mikrofon**: host mengizinkan kanal audio capture RDP; XyDesk harus mengaktifkan input dan meminta izin Android. Uji Windows Settings > Sound > Input. Perangkat bernama “Remote Audio” pada **Input** adalah recording, berbeda dari output speaker.
 
-- Đây là GitHub-hosted runner tạm thời, tối đa khoảng 6 giờ theo workflow; không phải VM chạy 24/7.
-- `npx hypertunnel` tạo TCP relay đến cổng RDP 3389. Nó không tạo địa chỉ cố định; host/port được cấp có thể thay đổi mỗi lần chạy.
-- Nếu bước tunnel không tìm thấy endpoint, xem log của bước **Khởi chạy hypertunnel**. Relay công cộng mặc định có thể không khả dụng.
-- RDP chỉ hoạt động nếu Windows runner có RDP listener đang lắng nghe trên cổng 3389.
-- Không dùng máy này để lưu dữ liệu nhạy cảm hoặc làm máy chủ sản xuất.
+Status `installer_ready`, `installed_unverified`, `store_required`, `unsupported_environment`, dan `requires_self_hosted` bukan klaim berhasil bermain. Wallpaper/mikrofon dan game belum lulus pengujian Windows + perangkat Android end-to-end.
 
-## Cấu trúc
+## Update repository lama
 
-- `.github/workflows/xyrdp-vn.yml` — workflow RDP + hypertunnel.
-- `scripts/cai-rdp-co-ban.ps1` — tạo tài khoản Windows và bật RDP.
-- `scripts/` — các script hỗ trợ từ bản XyRDP-VN gốc.
-- `railway-frp/` — cấu hình FRP cũ, không còn được workflow này sử dụng.
+Workflow baru bertanda `# rdpfree-workflow-schema: 3`. Dashboard menolak dispatch ke workflow lama agar parameter game/media baru tidak salah dikirim. Sinkronkan `.github/workflows/rdp-6h.yml`, seluruh `scripts/`, dan `assets/` dari repository ini. GitHub App tidak punya izin menulis source, jadi pembaruan dilakukan pemilik repository. Pengaturan tersimpan `tunnel`/`semua` dimigrasikan ke Sunshine + Moonlight; SA-MP default lama dinonaktifkan sampai pemilik memilih mesin khusus secara eksplisit.
+
+## Source dan akses
+
+- `.github/workflows/rdp-6h.yml`: Windows session + persiapan host.
+- `scripts/`: skrip Windows; `assets/`: wallpaper dan konfigurasi.
+- `web-next/`: dashboard Next.js/OpenNext/Cloudflare aktif. Folder `web/`, `deploy/`, dan dokumentasi lama adalah arsip implementasi terdahulu, bukan konfigurasi akses saat ini.
+- Admin tetap tersembunyi, login email/password + Turnstile; tidak dipindah ke GitHub login.
+- Native API: lihat `web-next/docs/XYDESK-API.md`. Token terikat repository dan dapat dicabut. Token OAuth native lama perlu dibuat ulang setelah pemisahan App.
+- Login terpisah tidak mencegah suspend. Untuk akun tester yang ditangguhkan, review hanya melalui GitHub Support; penyebab tidak dapat disimpulkan dari 404 atau pola login saja.
+
+## Validasi
+
+Lint, TypeScript, build OpenNext, unit tests dan browser mobile smoke tersedia/diuji. Skrip PowerShell diparse dengan PowerShell 7; parser bukan pengujian instalasi Windows. Tes UI game memakai mock API tanpa menyalakan runner atau game. Instalasi App nyata memerlukan persetujuan owner. Jangan menganggap hasil-hasil ini sebagai sertifikasi kompatibilitas game atau audio end-to-end.
+
+
+## Panduan repo dan hapus lewat dashboard
+
+Alur: buat repo dari template dahulu → konfirmasi “Repo saya sudah dibuat” → izinkan akses repository melalui GitHub App (Only select repositories) → pilih repo → isi secrets → mulai sesi. Install App berarti otorisasi, bukan membuat repo atau mengunduh aplikasi HP.
+
+Hapus repo tersedia di `/dashboard/connection`, khusus login GitHub pemilik repo pribadi. Ketik nama lengkap `owner/repo` dan setujui dampak penghapusan; workflow aktif/antre harus berhenti. Repo sumber layanan dilindungi dan token XyDesk tidak dapat menghapus. App yang sudah terdaftar perlu Administration: Read and write dan persetujuan pembaruan dari pemilik instalasi. Izin Administration lebih luas daripada delete-only; GitHub tidak menyediakan scope hapus khusus untuk installation token. Token biasa tetap tanpa Administration. Pengujian destructive menggunakan mock, bukan menghapus repo pengguna.
+
+
+## Akses streaming Sunshine + Moonlight
+
+Workflow Windows memasang Sunshine stable MSI resmi dari GitHub Releases, memulai service/proses host, lalu menambahkan aturan Windows Firewall untuk port streaming. Client Android/Windows menggunakan Moonlight. Pairing memakai PIN di Sunshine Web UI (`https://localhost:47990` trên máy chủ); không cần tài khoản Sunshine hoặc Tailscale.
+
+Cổng cần forward trên router/provider tới máy chủ: TCP `47984, 47989, 48010`; UDP `47998-48000, 48002, 48010`. Web UI TCP `47990` không được mở công khai. Người dùng cần hoàn tất first-run setup và pairing PIN. GitHub-hosted runners thường không có inbound public IP trực tiếp; do đó việc cài Sunshine không tự tạo được đường truy cập Internet. Nếu chạy trên runner hosted hoặc sau CGNAT, phải có relay/tunnel hỗ trợ UDP hoặc dùng máy chủ có IP công cộng/port forwarding.
+
+Sunshine không thay thế dịch vụ Windows RDP port 3389; nó cung cấp game/desktop streaming qua Moonlight. Tính năng kết nối không tài khoản chỉ loại bỏ Tailscale login, không loại bỏ bước ghép nối an toàn bằng PIN.
