@@ -1,0 +1,27 @@
+name: Validate Radmin VPN installer
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  installer:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse PowerShell scripts
+        shell: pwsh
+        run: |
+          foreach ($file in @('setup-radmin-vpn','setup-rdp','publish-status','finalize-rdp')) {
+            $errors=$null; $tokens=$null
+            [System.Management.Automation.Language.Parser]::ParseFile("$pwd/scripts/$file.ps1",[ref]$tokens,[ref]$errors) | Out-Null
+            if ($errors.Count) { throw ($errors | Out-String) }
+          }
+      - name: Install and verify Radmin VPN
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force out | Out-Null
+          ./scripts/setup-radmin-vpn.ps1
+          $svc=Get-Service -Name RvControlSvc -ErrorAction SilentlyContinue
+          if (-not $svc) { throw 'Radmin VPN control service not installed' }
+          if (-not (Get-Process -Name RvRvpnGui -ErrorAction SilentlyContinue)) { throw 'Radmin VPN GUI not running' }

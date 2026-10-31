@@ -1,12 +1,10 @@
-﻿# RdpFree: disconnect only its Tailscale/Portmap/Railway session, never kill unrelated SSH processes.
+﻿# XyRDP: stop only this session's Radmin VPN GUI; never kill unrelated processes.
 $XyTag='RdpFree:finalize'
 . "$PSScriptRoot/lib-common.ps1"
-# Stop only the Sunshine service/process created for this session.
-$svc = Get-Service -Name 'SunshineService' -ErrorAction SilentlyContinue
-if ($svc -and $svc.Status -eq 'Running') {
-  try { Stop-Service -Name $svc.Name -Force -ErrorAction SilentlyContinue; Log 'Sunshine service dihentikan.' } catch {}
-}
-Get-Process -Name 'sunshine' -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+# Stop only the Radmin VPN GUI process started by the session.
+Get-Process -Name 'RvRvpnGui' -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+$svc = Get-Service -Name 'RvControlSvc' -ErrorAction SilentlyContinue
+if ($svc -and $svc.Status -eq 'Running') { try { Stop-Service -Name $svc.Name -Force -ErrorAction SilentlyContinue; Log 'Radmin VPN service dihentikan.' } catch {} }
 Log 'Sesi dihentikan. Mesin self-hosted tidak dihapus otomatis.'
 
 $portmapRoot='C:\ProgramData\RdpFree\portmap'

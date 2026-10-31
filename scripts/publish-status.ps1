@@ -1,4 +1,4 @@
-﻿# ============================================================================
+﻿﻿# ============================================================================
 #  publish-status.ps1 - publikasikan out/rdp-status.json ke branch `status`
 #  1) GitHub Contents API via Invoke-RestMethod (Bearer GITHUB_TOKEN)  <- utama
 #  2) Fallback: git push pakai header "Authorization: Bearer"          <- terbukti jalan
@@ -42,6 +42,10 @@ if (-not $isActive) {
     if ($json.akses.PSObject.Properties['sunshine']) {
       Clear-Field $json.akses.sunshine 'host' ''
       Clear-Field $json.akses.sunshine 'web_ui' ''
+    }
+    if ($json.akses.PSObject.Properties['radmin']) {
+      Clear-Field $json.akses.radmin 'ip' ''
+      Clear-Field $json.akses.radmin 'status' 'stopped'
     }
     if ($json.akses.PSObject.Properties['tailscale']) {
       Clear-Field $json.akses.tailscale 'ip' ''

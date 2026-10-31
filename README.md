@@ -2,7 +2,7 @@
 
 Dashboard: **https://rdpfree.projectkal.my.id** · Credit: **KallAncrit**
 
-Windows RDP melalui **Sunshine + Moonlight privat**, dengan dashboard Next.js/Cloudflare dan integrasi API native XyDesk Remote. Tidak ada Pinggy, bore, ngrok, Serveo, localhost.run, Funnel, atau relay publik pada workflow aktif.
+Windows RDP melalui **Radmin VPN privat**, dengan dashboard Next.js/Cloudflare dan integrasi API native XyDesk Remote. Tidak ada Pinggy, bore, ngrok, Serveo, localhost.run, Funnel, atau relay publik pada workflow aktif.
 
 ## Mulai
 
@@ -18,7 +18,7 @@ Windows RDP melalui **Sunshine + Moonlight privat**, dengan dashboard Next.js/Cl
 
 Halaman `/dashboard/games` menyimpan pilihan persiapan SA-MP, Roblox, Minecraft Java dan Bedrock serta menampilkan status Windows pada sesi aktif. Pengaturan berlaku pada run berikutnya. Start/stop yang tersedia saat ini adalah **sesi workflow**, bukan proses game di desktop. Login, pemasangan interaktif, launch, dan stop game dilakukan lewat XyDesk. **Kontrol proses game langsung dari dashboard belum tersedia.**
 
-Persiapan game hanya berjalan pada runner Windows self-hosted khusus milikmu, berlabel `self-hosted`, `Windows`, `X64`, `rdpfree`. Jangan izinkan workflow/PR dari pihak tidak tepercaya memakai runner ini. Finalize memutus Sunshine + Moonlight, tetapi tidak menghapus akun, aplikasi, atau perubahan sistem pada mesin self-hosted; reset image setelah pemakaian.
+Persiapan game hanya berjalan pada runner Windows self-hosted khusus milikmu, berlabel `self-hosted`, `Windows`, `X64`, `rdpfree`. Jangan izinkan workflow/PR dari pihak tidak tepercaya memakai runner ini. Finalize memutus Radmin VPN, tetapi tidak menghapus akun, aplikasi, atau perubahan sistem pada mesin self-hosted; reset image setelah pemakaian.
 
 - **SA-MP**: membutuhkan GTA SA milikmu. Installer/dependensi atau keberadaan EXE bukan bukti berhasil masuk server.
 - **Roblox**: installer resmi dengan signature diverifikasi. VM dapat ditolak Roblox. Tidak ada spoofing BIOS, penghapusan driver VM, atau bypass anti-cheat.
@@ -31,7 +31,7 @@ Status `installer_ready`, `installed_unverified`, `store_required`, `unsupported
 
 ## Update repository lama
 
-Workflow baru bertanda `# rdpfree-workflow-schema: 3`. Dashboard menolak dispatch ke workflow lama agar parameter game/media baru tidak salah dikirim. Sinkronkan `.github/workflows/rdp-6h.yml`, seluruh `scripts/`, dan `assets/` dari repository ini. GitHub App tidak punya izin menulis source, jadi pembaruan dilakukan pemilik repository. Pengaturan tersimpan `tunnel`/`semua` dimigrasikan ke Sunshine + Moonlight; SA-MP default lama dinonaktifkan sampai pemilik memilih mesin khusus secara eksplisit.
+Workflow baru bertanda `# rdpfree-workflow-schema: 3`. Dashboard menolak dispatch ke workflow lama agar parameter game/media baru tidak salah dikirim. Sinkronkan `.github/workflows/rdp-6h.yml`, seluruh `scripts/`, dan `assets/` dari repository ini. GitHub App tidak punya izin menulis source, jadi pembaruan dilakukan pemilik repository. Pengaturan tersimpan `tunnel`/`semua` dimigrasikan ke Radmin VPN; SA-MP default lama dinonaktifkan sampai pemilik memilih mesin khusus secara eksplisit.
 
 ## Source dan akses
 
@@ -54,10 +54,17 @@ Alur: buat repo dari template dahulu → konfirmasi “Repo saya sudah dibuat”
 Hapus repo tersedia di `/dashboard/connection`, khusus login GitHub pemilik repo pribadi. Ketik nama lengkap `owner/repo` dan setujui dampak penghapusan; workflow aktif/antre harus berhenti. Repo sumber layanan dilindungi dan token XyDesk tidak dapat menghapus. App yang sudah terdaftar perlu Administration: Read and write dan persetujuan pembaruan dari pemilik instalasi. Izin Administration lebih luas daripada delete-only; GitHub tidak menyediakan scope hapus khusus untuk installation token. Token biasa tetap tanpa Administration. Pengujian destructive menggunakan mock, bukan menghapus repo pengguna.
 
 
-## Akses streaming Sunshine + Moonlight
+## Akses RDP qua Radmin VPN
 
-Workflow Windows memasang Sunshine stable MSI resmi dari GitHub Releases, memulai service/proses host, lalu menambahkan aturan Windows Firewall untuk port streaming. Client Android/Windows menggunakan Moonlight. Pairing memakai PIN di Sunshine Web UI (`https://localhost:47990` trên máy chủ); không cần tài khoản Sunshine hoặc Tailscale.
+Workflow Windows tải installer Radmin VPN `2.1.4951.1` từ URL chính thức do người dùng cung cấp, kiểm tra SHA-256, cài đặt im lặng và khởi chạy GUI. Radmin VPN không yêu cầu tài khoản. Cả máy chủ và thiết bị khách phải cài Radmin VPN rồi tạo/tham gia cùng một mạng bằng Network Name và Password. Sau khi kết nối, dùng IPv4 Radmin (thường thuộc dải `26.x.x.x`) làm host RDP, cổng `3389`.
 
-Cổng cần forward trên router/provider tới máy chủ: TCP `47984, 47989, 48010`; UDP `47998-48000, 48002, 48010`. Web UI TCP `47990` không được mở công khai. Người dùng cần hoàn tất first-run setup và pairing PIN. GitHub-hosted runners thường không có inbound public IP trực tiếp; do đó việc cài Sunshine không tự tạo được đường truy cập Internet. Nếu chạy trên runner hosted hoặc sau CGNAT, phải có relay/tunnel hỗ trợ UDP hoặc dùng máy chủ có IP công cộng/port forwarding.
+**Giới hạn tự động hóa:** Famatech hướng dẫn thao tác Create/Join network qua giao diện ứng dụng; chưa xác minh được CLI/API chính thức để tự động tạo hoặc tham gia mạng. Vì vậy workflow chỉ cài và khởi chạy Radmin VPN, không tự nhập Network Name/Password. Người vận hành phải hoàn tất bước Join network trong GUI. Radmin VPN chỉ hỗ trợ Windows; lựa chọn runner Linux không được hỗ trợ bởi đường truy cập này.
 
-Sunshine không thay thế dịch vụ Windows RDP port 3389; nó cung cấp game/desktop streaming qua Moonlight. Tính năng kết nối không tài khoản chỉ loại bỏ Tailscale login, không loại bỏ bước ghép nối an toàn bằng PIN.
+Radmin VPN tạo mạng LAN ảo giữa các peer; máy khách cũng cần cài Radmin VPN. Không mở RDP `3389` trực tiếp ra Internet.
+
+
+## Workflow Windows tối giản (Radmin VPN)
+Đã bỏ các bước cài game/studio (GTA SA-MP, Minecraft, Roblox, ETS2, Blender,
+MEmu, FiveM) và Mesa3D dành riêng cho game. Workflow không còn chạy các vòng
+handshake/port-check RDP kéo dài; chỉ ghi nhận listener cục bộ. Kết nối client
+qua IPv4 do Radmin VPN cấp, sử dụng cổng RDP 3389 trong cùng mạng Radmin VPN.

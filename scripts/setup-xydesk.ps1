@@ -47,7 +47,6 @@ $tsPol  = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\T
 $tsTcp  = "$tsRoot\WinStations\RDP-Tcp"
 
 # ---------- 0. Probe awal (RDP sehat?) ----------
-$rdpAlive0 = Probe-Rdp 'sebelum tweak xydesk'
 
 # ---------- 1. Multi-sesi: kunci root + kunci KEBIJAKAN saja ----------
 # PENTING (temuan validasi 2026-10-03): menulis nilai di
@@ -60,7 +59,6 @@ $okMulti = Set-Reg $tsRoot 'fSingleSessionPerUser' 0 'DWord'
 Set-Reg $tsPol 'fDenyTSConnections'   0 'DWord' | Out-Null
 Set-Reg $tsPol 'fSingleSessionPerUser' 0 'DWord' | Out-Null
 Log "  RDP: denyTS=$okDeny multisesi=$okMulti"
-$rdpAlive1 = Probe-Rdp 'setelah setelan multi-sesi (root+policy)'
 
 # ---------- 1b. Audio + font + wallpaper RDP: kebijakan (Policy override WinStations) ----------
 # Audio: aktifkan playback + mic via Policy (override WinStations tanpa tulis WinStations biar listener gak mati)
@@ -87,7 +85,6 @@ Log "  audit WinStations\RDP-Tcp (tanpa tulis): fDisableAudio=$curAudio fDisable
 $okAudio = ($polAudio -eq 0) -or (($null -eq $polAudio) -and ("$curAudio" -ne '1'))
 $okMic   = ($polMic -eq 0) -or (($null -eq $polMic) -and ("$curMic" -ne '1'))
 $okWall  = ($polWall -eq 0) -or (($null -eq $polWall) -and ("$curWall" -ne '1'))
-$rdpAlive2 = Probe-Rdp 'setelah kebijakan audio+wallpaper + audit WinStation'
 
 # ---------- 2. Kebijakan grafis XyDesk (stabil: tanpa WDDM/AVC444/HW-encode) ----------
 # Keluhan white/black screen ditelusuri ke kombinasi fEnableWddmDriver=1 +
@@ -123,7 +120,6 @@ try {
 } catch {}
 $avcTxt = if ($okAvc -and $okAvc2) { 'ok (WDDM off + AVC software + DWMFRAMEINTERVAL=15 + TCPNoDelay=1)' } else { 'gagal' }
 Log "  grafis: stabil (AVC444ModePreferred=0, AVCHardwareEncodePreferred=0, fEnableWddmDriver=0) -> $avcTxt"
-$rdpAlive3 = Probe-Rdp 'setelah kebijakan grafis stabil (tanpa WDDM/AVC444/HW-encode)'
 
 # ---------- 3. ClearType: lewat profil Default (per-user), bukan kunci WinStation ----------
 $fontTxt = 'gagal'
@@ -137,7 +133,6 @@ if (Open-DefaultHive) {
   $fontTxt = if ($f1 -and $f2) { 'ok (ClearType profil Default)' } elseif ($f1 -or $f2) { 'sebagian' } else { 'gagal' }
 } else { $fontTxt = 'gagal (profil Default tak bisa di-load)' }
 Log "  ClearType: $fontTxt (FontSmoothing=2 + FontSmoothingType=2 di profil Default)"
-$rdpAlive4 = Probe-Rdp 'setelah ClearType profil Default'
 
 # ---------- 4. Firewall (dibuka di VM; dari luar tetap hanya via tunnel/P2P) ----------
 function Add-FwRule([string]$Name, [string]$Proto, [string]$Ports) {
@@ -153,7 +148,6 @@ $fwUdp  = Add-FwRule 'XyDesk Remote RDP UDP'  'UDP' '3389'
 $fw4433 = Add-FwRule 'XyDesk Remote QUIC UDP' 'UDP' '4433'
 Enable-NetFirewallRule -DisplayGroup 'Remote Desktop' -ErrorAction SilentlyContinue | Out-Null
 Log "  firewall: TCP3389=$fwTcp UDP3389=$fwUdp UDP4433=$fw4433"
-$rdpAlive5 = Probe-Rdp 'setelah aturan firewall'
 
 # ---------- 5. Layanan ----------
 $svcOk = @()
@@ -166,7 +160,6 @@ foreach ($svc in @('TermService', 'Audiosrv', 'AudioEndpointBuilder', 'UmRdpServ
 }
 $svcTxt = if ($svcOk.Count -eq 2) { 'ok' } elseif ($svcOk.Count -eq 1) { "sebagian ($($svcOk[0]) hidup)" } else { 'gagal' }
 Log "  layanan: $svcTxt"
-$rdpAlive6 = Probe-Rdp 'setelah start layanan'
 
 # ---------- 6. Akses privat + Daemon UDP :4433 P2P Stream (`XYV1`) & RawInput (`XYI1`) ----------
 try {
@@ -445,16 +438,14 @@ public static class XyRawInputDaemon {
   Set-Reg $runKey 'XyDeskRawInputUDP' "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$daemonPs1`"" 'String' | Out-Null
   Log '  daemon RawInput Game FPS (UDP :4433 -> SendInput MOUSEEVENTF_MOVE) terdaftar di HKLM Run'
 } catch { Log "  daemon RawInput gagal didaftarkan: $($_.Exception.Message)" }
-Log 'Hubungkan HP dan Windows ke tailnet yang sama. RDP playback dan audio capture memakai kanal RDP; bridge UDP :4433 siap untuk RawInput Game FPS.'
+Log 'Hubungkan perangkat client dan Windows ke cùng một mạng Radmin VPN. RDP playback dan audio capture memakai kanal RDP; bridge UDP :4433 siap untuk RawInput Game FPS.'
 
-# ---------- 6b. Verifikasi RDP masih hidup setelah tweak ----------
-# CATATAN PENTING (validasi 2026-10-03): setelah tweak, listener 3389 di runner
-# ini sempat mati ~2 menit. Kita TIDAK me-restart TermService lagi (restart tidak
-# membantu, malah memperlama mati) - kita cukup mengukur dan melaporkan apa
-# adanya supaya setup-akses tahu harus menunggu berapa lama.
-$rdpReadyAt = Wait-RdpReady -TimeoutSec 150
-if ($rdpReadyAt) { Log "  RDP masih sehat setelah tweak: $rdpReadyAt`:3389 (handshake X.224 OK)" }
-else { Log '  PERINGATAN: RDP belum menjawab handshake setelah tweak - setup-akses akan menunggu lagi' }
+# ---------- 6b. Tidak melakukan port-check ----------
+# IP koneksi disediakan oleh Radmin VPN. Tidak perlu probe/handshake berulang
+# atau menunggu hingga 150 detik; chỉ ghi nhận listener cục bộ.
+$rdpReadyAt = $null
+$rdpListenerNow = Get-RdpListenerState 3389
+Log "  Bỏ qua port-check; Radmin VPN cấp IP riêng. Listener cục bộ: $rdpListenerNow"
 
 # ---------- 7. Status (apa adanya, bukan asumsi) ----------
 $allOk = $okDeny -and $okMulti -and $okAudio -and $okMic -and $okWall -and $okAvc -and $okAvc2 -and ($fontTxt -like 'ok*')
@@ -469,8 +460,8 @@ Update-Status @{ xydesk = [ordered]@{
     wallpaper_rdp = if ($okWall) { "ok (policy fNoRemoteDesktopWallpaper=$polWall) - wallpaper RDP tampil, cek client Experience->Wallpaper ON" } else { "gagal (policy=$polWall WinStations=$curWall) - RDP blok wallpaper" }
     firewall      = "tcp3389=$fwTcp udp3389=$fwUdp udp4433=$fw4433"
     services      = $svcTxt
-    rdp_ready     = if ($rdpReadyAt) { "$rdpReadyAt (handshake OK)" } else { 'belum' }
-    rdp_probe     = "awal=$rdpAlive0 multi=$rdpAlive1 audio=$rdpAlive2 grafis=$rdpAlive3 clear=$rdpAlive4 fw=$rdpAlive5 svc=$rdpAlive6"
+    rdp_ready     = 'port-check skipped; use Radmin VPN IP:3389'
+    rdp_probe     = 'skipped (Radmin VPN provides private IP; no external port scan)'
     quic_udp4433  = 'dibuka di VM (tidak lewat tunnel TCP)'
     akses         = if ($addr) { $addr } else { '(menyusul)' }
     note          = if ($allOk) { 'Host siap dipakai klien XyDesk Remote mode Koneksi RDP (Host+Port tunnel). Kunci WinStations\RDP-Tcp sengaja TIDAK ditulis supaya listener 3389 tidak mati di runner GitHub.' }

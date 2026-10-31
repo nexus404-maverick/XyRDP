@@ -1,4 +1,4 @@
-# rdpfree-workflow-schema: 6
+# rdpfree-workflow-schema: 7
 name: RdpFree — RDP 6 Jam
 
 on:
@@ -22,10 +22,10 @@ on:
       akses:
         description: 'Metode remote desktop/game streaming'
         required: false
-        default: 'sunshine'
+        default: 'radmin'
         type: choice
         options:
-          - sunshine
+          - radmin
       storage_boost:
         description: 'Bersihkan toolcache untuk ruang disk ekstra'
         required: false
@@ -42,14 +42,6 @@ on:
         options:
           - ringan
           - full
-          - tidak
-      samp:
-        description: 'Pasang runtime + SilentPatch GTA SA & SA-MP'
-        required: false
-        default: 'ya'
-        type: choice
-        options:
-          - ya
           - tidak
       win10:
         description: 'Terapkan tampilan gaya Windows 10'
@@ -84,7 +76,7 @@ on:
           - software
           - tidak
       runner:
-        description: 'OS & Image Runner (Windows / Linux Desktop / Linux Polos)'
+        description: 'Windows runner (Radmin VPN chỉ hỗ trợ Windows)'
         required: false
         default: 'windows-2022'
         type: choice
@@ -92,9 +84,6 @@ on:
           - windows-2022
           - windows-2025
           - windows-latest
-          - ubuntu-24.04
-          - ubuntu-22.04
-          - ubuntu-latest
       linux_mode:
         description: 'Mode Linux (desktop = XFCE4 GUI XRDP :3389, polos = Server SSH Tanpa XFCE4 :22/:3389)'
         required: false
@@ -107,30 +96,6 @@ on:
         description: 'Aktifkan redireksi mikrofon & kamera RDP'
         required: false
         default: 'ya'
-        type: choice
-        options:
-          - ya
-          - tidak
-      roblox:
-        description: 'Siapkan installer Roblox Player'
-        required: false
-        default: 'tidak'
-        type: choice
-        options:
-          - ya
-          - tidak
-      minecraft_java:
-        description: 'Pasang Minecraft Java + JDK 21/JRE 8 + OpenGL 4.6 D3D12'
-        required: false
-        default: 'tidak'
-        type: choice
-        options:
-          - ya
-          - tidak
-      minecraft_bedrock:
-        description: 'Pasang Minecraft Launcher (Bedrock)'
-        required: false
-        default: 'tidak'
         type: choice
         options:
           - ya
@@ -170,19 +135,15 @@ jobs:
       HOSTNAME: ${{ inputs.hostname || 'rdpfree' }}
       RDP_USER: ${{ inputs.rdp_user || 'xyadmin' }}
       RDP_PASSWORD: ${{ secrets.RDP_PASSWORD }}
-      AKSES: ${{ inputs.akses || 'sunshine' }}
+      AKSES: ${{ inputs.akses || 'radmin' }}
       STORAGE_BOOST: ${{ inputs.storage_boost || 'ya' }}
       DEBLOAT: ${{ inputs.debloat || 'ringan' }}
-      SAMP: ${{ inputs.samp || 'ya' }}
       WIN10: ${{ inputs.win10 || 'ya' }}
       XYDESK: ${{ inputs.xydesk || 'ya' }}
       EKSTRA: ${{ inputs.ekstra || 'ya' }}
       GRAFIS: ${{ inputs.grafis || 'software' }}
       LINUX_MODE: ${{ inputs.linux_mode || 'desktop' }}
       MICROPHONE: ${{ inputs.microphone || 'ya' }}
-      ROBLOX: ${{ inputs.roblox || 'tidak' }}
-      MINECRAFT_JAVA: ${{ inputs.minecraft_java || 'tidak' }}
-      MINECRAFT_BEDROCK: ${{ inputs.minecraft_bedrock || 'tidak' }}
       DISCORD: ${{ inputs.discord || 'tidak' }}
       PERPANJANG_OTOMATIS: ${{ inputs.perpanjang_otomatis || 'ya' }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -257,24 +218,6 @@ jobs:
         continue-on-error: true
         run: ./scripts/setup-media.ps1
 
-      - name: Grafis OpenGL 4.6 D3D12 (Mesa3D untuk Minecraft & Game)
-        if: ${{ !startsWith(inputs.runner || 'windows-2022', 'ubuntu') && (inputs.grafis || 'software') != 'tidak' }}
-        shell: pwsh
-        continue-on-error: true
-        run: ./scripts/setup-grafis.ps1
-
-      - name: Runtime All-Software 2026 & GTA SA-MP By SilentPatch
-        if: ${{ !startsWith(inputs.runner || 'windows-2022', 'ubuntu') && (inputs.samp || 'ya') != 'tidak' }}
-        shell: pwsh
-        continue-on-error: true
-        run: ./scripts/setup-samp.ps1
-
-      - name: Pasang Suite Game & Studio (Minecraft, Roblox, ETS 2, Blender, MEmu, FiveM)
-        if: ${{ !startsWith(inputs.runner || 'windows-2022', 'ubuntu') }}
-        shell: pwsh
-        continue-on-error: true
-        run: ./scripts/setup-games.ps1
-
       - name: Aplikasi ekstra (7-Zip, Chrome, Lightshot, Wallpaper)
         if: ${{ !startsWith(inputs.runner || 'windows-2022', 'ubuntu') && (inputs.ekstra || 'ya') != 'tidak' }}
         shell: pwsh
@@ -293,10 +236,10 @@ jobs:
         continue-on-error: true
         run: ./scripts/setup-xydesk.ps1
 
-      - name: Setup Sunshine + Moonlight (tanpa akun, pairing PIN)
-        if: ${{ !startsWith(inputs.runner || 'windows-2022', 'ubuntu') && (inputs.akses || 'sunshine') == 'sunshine' }}
+      - name: Setup Radmin VPN (tanpa akun, jaringan privat)
+        if: ${{ !startsWith(inputs.runner || 'windows-2022', 'ubuntu') && (inputs.akses || 'radmin') == 'radmin' }}
         shell: pwsh
-        run: ./scripts/setup-sunshine.ps1
+        run: ./scripts/setup-radmin-vpn.ps1
 
       - name: Pasang Discord desktop
         if: ${{ !startsWith(inputs.runner || 'windows-2022', 'ubuntu') && (inputs.discord || 'tidak') == 'ya' }}
@@ -306,7 +249,7 @@ jobs:
 
 
 
-      - name: Publish status siap pakai (setelah seluruh aplikasi & game siap)
+      - name: Publish status siap pakai (Radmin VPN + RDP)
         if: ${{ !startsWith(inputs.runner || 'windows-2022', 'ubuntu') }}
         shell: pwsh
         continue-on-error: true
@@ -359,7 +302,6 @@ jobs:
               akses               = "$($env:AKSES)"
               storage_boost       = "$($env:STORAGE_BOOST)"
               debloat             = "$($env:DEBLOAT)"
-              samp                = "$($env:SAMP)"
               win10               = "$($env:WIN10)"
               xydesk              = "$($env:XYDESK)"
               ekstra              = "$($env:EKSTRA)"
@@ -367,9 +309,6 @@ jobs:
               runner              = "${{ inputs.runner || 'windows-2022' }}"
               linux_mode          = "$($env:LINUX_MODE)"
               microphone          = "$($env:MICROPHONE)"
-              roblox              = "$($env:ROBLOX)"
-              minecraft_java      = "$($env:MINECRAFT_JAVA)"
-              minecraft_bedrock   = "$($env:MINECRAFT_BEDROCK)"
               discord             = "$($env:DISCORD)"
               perpanjang_otomatis = "$($env:PERPANJANG_OTOMATIS)"
             }

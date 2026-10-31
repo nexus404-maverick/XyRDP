@@ -1,10 +1,10 @@
-﻿# ============================================================================
+# ============================================================================
 #  setup-rdp.ps1 - MODE DASAR (v2: tanpa Tailscale)
 #  1) buat user admin (Administrators + Remote Desktop Users, password tetap)
 #  2) aktifkan Remote Desktop port 3389 (setting standar Windows)
 #  3) catat info sesi ke out/rdp-status.json (tanpa password)
 #
-# Akses Sunshine/Moonlight disiapkan pada bước riêng. GitHub-hosted runners tidak menyediakan inbound publik secara langsung.
+# Akses Radmin VPN disiapkan pada langkah riêng. Host dan client harus tham gia cùng một mạng Radmin VPN.
 # ============================================================================
 
 $XyTag = 'XyRDP:rdp'
@@ -345,17 +345,15 @@ if ((Get-RdpListenerState 3389) -eq 'TIDAK ADA listener') {
     Start-Sleep -Seconds 4
   } catch {}
 }
-# tunggu sampai RDP BENAR-BENAR menjawab handshake X.224 (maks 120 detik).
-# "port LISTENING" saja tidak cukup: di runner nyata listener 3389 sempat hidup
-# lalu hilang/kosong ~2 menit setelah tweak XyDesk (validasi 2026-10-03).
-$rdpReadyAt = Wait-RdpReady -TimeoutSec 120
+# Không chạy port-check/handshake kéo dài: Radmin VPN cấp IP riêng cho máy.
+# Chỉ đọc listener cục bộ; client kết nối qua IP Radmin:3389.
+$rdpReadyAt = $null
 $listen = Get-RdpListenerState 3389
-if ($rdpReadyAt) { $listen = "$listen + handshake ok via $rdpReadyAt" } else { $listen = "$listen + handshake BELUM OK" }
 try {
   $ns = (netstat -ano | Select-String ':3389' | Select-Object -First 3) -join ' | '
   Log "  netstat :3389 -> $ns"
 } catch {}
-Log "RDP di port 3389: denyTS=$okDeny | listener=$listen (NLA default Windows). Tidak otomatis tersedia inbound publik; Sunshine membutuhkan rute jaringan yang dapat dijangkau."
+Log "RDP di port 3389: denyTS=$okDeny | listener=$listen (NLA default Windows). Tidak otomatis tersedia inbound publik; Radmin VPN cần cùng một mạng ảo giữa host và client."
 
 
 # ---------- 3. Status (tanpa password) ----------
@@ -379,7 +377,7 @@ $status = [ordered]@{
   run_number     = $env:GITHUB_RUN_NUMBER
   run_url        = "https://github.com/$($env:GITHUB_REPOSITORY)/actions/runs/$($env:GITHUB_RUN_ID)"
   mode           = 'bersih+win10'
-  akses          = @{ mode = 'sunshine'; sunshine = @{ status = 'pending' } }
+  akses          = @{ mode = 'radmin'; radmin = @{ status = 'pending'; ip = '' } }
 }
 $outDir = Join-Path (Get-Workspace) 'out'
 New-Item -ItemType Directory -Path $outDir -Force | Out-Null
@@ -387,5 +385,5 @@ $status | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 -Path (Join-Path 
 $now.ToString('s') | Set-Content -Path (Join-Path $outDir 'started.txt')
 $status | ConvertTo-Json -Depth 8 | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
 
-Log "SESI DASAR SIAP - user $u, port 3389. Lanjut: setup Sunshine/Moonlight."
+Log "SESI DASAR SIAP - user $u, port 3389. Lanjut: setup Radmin VPN."
 exit 0

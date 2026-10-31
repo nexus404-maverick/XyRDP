@@ -18,7 +18,7 @@ export async function POST(req:NextRequest){return guarded(async()=>{
   const r=await github<{full_name:string}>(c.token,"/repos/"+TEMPLATE+"/generate","POST",{owner:who.login,name,private:data.private===true,include_all_branches:false,description:"RdpFree Windows workflow — credit KallAncrit"});
   if(r.full_name.toLowerCase()!==repo.toLowerCase())throw new ApiError(502,"Repository hasil template tidak sesuai");
   await db().prepare("INSERT INTO repositories(subject,repo,state,updated) VALUES(?,?,'initializing',?) ON CONFLICT(subject) DO UPDATE SET repo=excluded.repo,state=excluded.state,updated=excluded.updated").bind(c.subject,r.full_name,Date.now()).run();
-  await db().prepare("INSERT INTO settings(repo,inputs,updated) VALUES(?,?,?) ON CONFLICT(repo) DO NOTHING").bind(r.full_name,JSON.stringify({...defaults,akses:"sunshine"}),Date.now()).run();
+  await db().prepare("INSERT INTO settings(repo,inputs,updated) VALUES(?,?,?) ON CONFLICT(repo) DO NOTHING").bind(r.full_name,JSON.stringify({...defaults,akses:"radmin"}),Date.now()).run();
   // Return immediately. GitHub may need time before refs and workflows become visible.
   return reply({repo:r.full_name,created:true,importing:true},201);
  }
