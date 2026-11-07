@@ -8,6 +8,8 @@
 #         dengan satu pilihan agar dashboard & kontrak lama tetap kompatibel.
 #         Runtime dibagi cepat/penuh (input runtimes, default auto) + cache
 #         installer (actions/cache) supaya setup sesi jauh lebih cepat.
+# 1.1.30: Step "Pasang Suite Game & Studio" dihapus dari workflow
+#         (input terkait dipertahankan agar kontrak web-next tetap valid).
 name: RdpFree — RDP 6 Jam
 
 on:
@@ -348,11 +350,10 @@ jobs:
         continue-on-error: true
         run: ./scripts/setup-samp-antiban.ps1
 
-      - name: Pasang Suite Game & Studio (Minecraft, Roblox, ETS 2, Blender, MEmu, FiveM)
-        if: ${{ !startsWith(inputs.runner || 'windows-2022', 'ubuntu') }}
-        shell: pwsh
-        continue-on-error: true
-        run: ./scripts/setup-games.ps1
+      # [DIHAPUS] Step "Pasang Suite Game & Studio (Minecraft, Roblox, ETS 2, Blender, MEmu, FiveM)"
+      #          (scripts/setup-games.ps1) dihilangkan dari workflow sesuai permintaan.
+      #          Input roblox / minecraft_java / minecraft_bedrock tetap dipertahankan
+      #          agar kontrak web-next/src/lib/workflow-contract.ts tidak berubah.
 
       - name: MuMu Player 12 (Android Emulator)
         timeout-minutes: 25
