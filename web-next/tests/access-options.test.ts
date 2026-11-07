@@ -1,0 +1,4 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';
+import {portmapEndpointReady,requirePortmapConfiguration} from '../src/lib/access-options';import {defaults} from '../src/lib/workflow';
+test('Tailscale is the only tunnel; legacy Portmap endpoint stays locked',()=>{assert.equal(defaults.akses,'tailscale');for(const v of [{},{portmap_host:'rdp.example.com'},{portmap_host:'rdp.example.com',portmap_port:'41858'}])assert.equal(portmapEndpointReady(v),false);});
+test('server no longer validates Portmap configuration',async()=>{const old=fetch;let reads=0;try{globalThis.fetch=async()=>{reads++;return Response.json({message:'Not Found'},{status:404})};await requirePortmapConfiguration({} as never,{akses:'portmap'});await requirePortmapConfiguration({} as never,{akses:'tailscale'});assert.equal(reads,0);}finally{globalThis.fetch=old}});
