@@ -1,0 +1,135 @@
+{
+  "active": true,
+  "hostname": "rdpfree-1",
+  "os": "Microsoft Windows Server 2022 Datacenter",
+  "os_build": "10.0.20348",
+  "os_style": "Native Windows",
+  "hardware": {
+    "ram_gb": 16.0,
+    "disk_free_gb": 80.3,
+    "cpu_threads": 4
+  },
+  "rdp_port": 3389,
+  "rdp_user": "xyadmin",
+  "rdp_listen": ":::3389 (svchost) | 0.0.0.0:3389 (svchost) + handshake ok via 127.0.0.1",
+  "rdp_denyts": true,
+  "started_at": "2026-11-07T01:27:15Z",
+  "expires_at": "2026-11-07T07:09:15Z",
+  "duration_menit": 342,
+  "run_id": "42324066267",
+  "run_attempt": "1",
+  "run_number": "1",
+  "run_url": "https://github.com/nexus404-maverick/XyRDP/actions/runs/42324066267",
+  "mode": "bersih+win10",
+  "runtimes": {
+    "mode": "cepat",
+    "vc2022x64": "sudah ada",
+    "vc2022x86": "sudah ada",
+    "vc2013x64": "sudah ada",
+    "vc2013x86": "sudah ada",
+    "vc2012x64": "gagal (winget absen)",
+    "vc2012x86": "gagal (winget absen)",
+    "vc2010x64": "gagal (winget absen)",
+    "vc2010x86": "gagal (winget absen)",
+    "directx9": "dilewati (mode cepat)",
+    "net35": "dilewati (mode cepat)",
+    "vc2008x64": "dilewati (mode cepat)",
+    "vc2005x64": "dilewati (mode cepat)"
+  },
+  "storage": {
+    "status": "ok",
+    "mode": "boost-ringan",
+    "before_gb": 80.26,
+    "after_gb": 116.99,
+    "gained_gb": 36.73,
+    "removed_targets": 31,
+    "drives": [
+      {
+        "size_gb": 255.45,
+        "free_gb": 116.99,
+        "used_gb": 138.46,
+        "letter": "C"
+      },
+      {
+        "size_gb": 150.0,
+        "free_gb": 146.98,
+        "used_gb": 3.01,
+        "letter": "D"
+      }
+    ],
+    "game_dir": "D:\\Games (disarankan untuk GTA)",
+    "note": "Cleanup selesai. gained_gb adalah perubahan ruang aktual, bukan kapasitas yang dijanjikan. Target terkunci bisa tersisa.",
+    "updated_at": "2026-11-07T01:33:53.9030544Z"
+  },
+  "fps_boost": {
+    "status": "ok",
+    "applied": [
+      "Power plan High Performance",
+      "RDP DWMFRAMEINTERVAL 15 (target 60 fps)",
+      "RDP: matikan wallpaper/full-drag saat remote",
+      "Game Mode + Game Bar auto",
+      "Matikan Xbox Game Bar capture (GameDVR) - hemat CPU saat game jalan",
+      "Hardware-Accelerated GPU Scheduling (jika didukung)",
+      "VisualFXSetting = best performance",
+      "Prioritas CPU/IO proses game"
+    ],
+    "skipped": [],
+    "applied_count": 8,
+    "elapsed_sec": 1.4,
+    "note": "Tweak rendering RDP & scheduler OS. Tidak menaikkan FPS game 3D tanpa GPU fisik; Mesa3D/WARP tetap dipakai.",
+    "updated_at": "2026-11-07T01:33:55.7296883Z"
+  },
+  "win10": {
+    "look": "ok",
+    "badge": "ok",
+    "wallpaper": "ok",
+    "search": "ok",
+    "os": "Microsoft Windows Server 2022 Datacenter",
+    "note": "Tampilan Windows 10 (UI Windows Server 2022 = kernel/UI Windows 10 21H2)"
+  },
+  "media": {
+    "verification": "Login ulang, aktifkan mic di XyDesk dan izinkan Android. Uji Windows Settings > Sound > Input; kebijakan aktif bukan bukti capture end-to-end.",
+    "audio_output": "rdp_playback_enabled",
+    "wallpaper": "xyverse_configured_for_user_logon",
+    "microphone": "rdp_capture_enabled"
+  },
+  "grafis": {
+    "vulkan": "lavapipe 1.3 (CPU)",
+    "path": "C:\\XyRDP\\grafis\\mesa-x64",
+    "mesa": "26.2.6",
+    "adapters": "Microsoft Hyper-V Video",
+    "opengl": "4.6 (Mesa llvmpipe system-wide x64/x86 + OpenGL ES 3.2)",
+    "mode": "software"
+  },
+  "extras": {
+    "lightshot": "ok",
+    "wallpaper": "ok",
+    "wallpaper_file": "wallpaper.jpg",
+    "vscode": "skip",
+    "notepadpp": "skip",
+    "admin": true
+  },
+  "tools_hub": {
+    "installed": true,
+    "auto_start": true,
+    "exe": "C:\\XyRDP\\tools\\XyDeskDashboard.exe"
+  },
+  "akses": {
+    "tailscale": {
+      "note": "HP/PC harus login Tailscale pada tailnet yang sama. TCP 3389 harus diizinkan ACL.",
+      "hostname": "rdpfree",
+      "ip": "100.97.23.22",
+      "magicdns": "rdpfree.tailf2f2b8.ts.net.",
+      "status": "ok"
+    },
+    "tunnel": {
+      "outside": "tailscale",
+      "selftest": "ok",
+      "host": "100.97.23.22",
+      "port": 3389,
+      "status": "ok",
+      "address": "100.97.23.22:3389"
+    },
+    "mode": "tailscale"
+  }
+}
